@@ -22,6 +22,7 @@
 // ----------------------------------------------------------------------------------------------
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <map>
 #include <numeric>
@@ -134,7 +135,7 @@ namespace
     template<typename TValueArray>
     std::size_t get_array_size (TValueArray & a)
     {
-        return cpplinq::detail::get_array_properties<TValueArray>::size;
+        return std::extent<TValueArray>::value;
     }
 
     std::size_t get_even_counts (int const * is, std::size_t count)

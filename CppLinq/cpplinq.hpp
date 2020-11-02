@@ -27,6 +27,7 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <utility>
 #// ----------------------------------------------------------------------------
 #ifdef _MSC_VER
 #   pragma warning (push)
@@ -48,7 +49,7 @@
 #   define CPPLINQ_INLINEMETHOD inline
 #endif
 #ifndef CPPLINQ_NOEXCEPT
-#   define CPPLINQ_NOEXCEPT throw ()
+#   define CPPLINQ_NOEXCEPT noexcept
 #endif
 // ----------------------------------------------------------------------------
 
@@ -116,35 +117,17 @@ namespace cpplinq
         template<typename TRangeBuilder, typename TRange>
         struct get_builtup_type
         {
-            static TRangeBuilder get_builder ();
-            static TRange get_range ();
-
-            typedef decltype (get_builder ().build (get_range ()))  type;
+            typedef     decltype (
+                std::declval<TRangeBuilder>().build ( std::declval<TRange>() )
+            )                                                       type        ;
         };
 
         template<typename TPredicate, typename TValue>
         struct get_transformed_type
         {
-            static TValue                       get_value ();
-            static TPredicate                   get_predicate ();
-
-            typedef     decltype (get_predicate ()(get_value ()))   raw_type    ;
+            typedef     decltype ( std::declval<TPredicate>()( std::declval<TValue>() ) )
+                                                                    raw_type    ;
             typedef     typename cleanup_type<raw_type>::type       type        ;
-        };
-
-        template<typename TArray>
-        struct get_array_properties;
-
-        template<typename TValue, int Size>
-        struct get_array_properties<TValue[Size]>
-        {
-            enum
-            {
-                size = Size ,
-            };
-
-            typedef typename    cleanup_type<TValue>::type  value_type      ;
-            typedef             value_type const *          iterator_type   ;
         };
 
         template<typename TValue>
@@ -447,18 +430,16 @@ namespace cpplinq
         template<typename TValueIterator>
         struct from_range : base_range
         {
-            static TValueIterator get_iterator ();
-
             typedef                 from_range<TValueIterator>          this_type       ;
             typedef                 TValueIterator                      iterator_type   ;
 
-            typedef                 decltype (*get_iterator ())         raw_value_type  ;
+            typedef                 decltype (* std::declval<TValueIterator>())
+                                                                        raw_value_type  ;
+                                                                        
             typedef        typename cleanup_type<raw_value_type>::type  value_type      ;
             typedef                 value_type const &                  return_type     ;
-            enum
-            {
-                returns_reference = 1,
-            };
+            
+            static constexpr bool returns_reference = true;
 
             iterator_type           current ;
             iterator_type           upcoming;
@@ -529,10 +510,8 @@ namespace cpplinq
             typedef        typename TContainer::const_iterator          iterator_type   ;
             typedef        typename TContainer::value_type              value_type      ;
             typedef                 value_type const &                  return_type     ;
-            enum
-            {
-                returns_reference = 1 ,
-            };
+            
+            static constexpr bool returns_reference = true;
 
             container_type          container   ;
 
@@ -610,10 +589,8 @@ namespace cpplinq
             typedef                 int_range                           this_type       ;
             typedef                 int                                 value_type      ;
             typedef                 int                                 return_type     ;
-            enum
-            {
-                returns_reference = 0   ,
-            };
+
+            static constexpr bool returns_reference = false;
 
             int                     current ;
             int                     end     ;
@@ -681,10 +658,8 @@ namespace cpplinq
             typedef                 repeat_range<TValue>                this_type       ;
             typedef                 TValue                              value_type      ;
             typedef                 TValue                              return_type     ;
-            enum
-            {
-                returns_reference = 0   ,
-            };
+
+            static constexpr bool returns_reference = false;
 
             TValue                  value       ;
             size_type               remaining   ;
@@ -742,10 +717,8 @@ namespace cpplinq
             typedef                 empty_range<TValue>                 this_type       ;
             typedef                 TValue                              value_type      ;
             typedef                 TValue                              return_type     ;
-            enum
-            {
-                returns_reference = 0   ,
-            };
+
+            static constexpr bool returns_reference = false;
 
             CPPLINQ_INLINEMETHOD empty_range () CPPLINQ_NOEXCEPT
             {
@@ -786,10 +759,7 @@ namespace cpplinq
             typedef                 TValue                              value_type      ;
             typedef                 TValue const &                      return_type     ;
 
-            enum
-            {
-                returns_reference = 1   ,
-            };
+            static constexpr bool returns_reference = true;
 
             value_type  value   ;
             bool        done    ;
@@ -877,12 +847,10 @@ namespace cpplinq
             typedef                 typename TRange::value_type         value_type              ;
             typedef                 typename TRange::return_type        forwarding_return_type  ;
             typedef                 value_type const &                  return_type             ;
-            enum
-            {
-                forward_returns_reference   = TRange::returns_reference ,
-                returns_reference           = 1                         ,
-            };
-
+            
+            static constexpr bool forward_returns_reference = TRange::returns_reference;
+            static constexpr bool returns_reference = true;
+            
             range_type              range           ;
             predicate_type          predicate       ;
             bool                    sort_ascending  ;
@@ -1042,12 +1010,10 @@ namespace cpplinq
             typedef                 typename TRange::value_type             value_type              ;
             typedef                 typename TRange::forwarding_return_type forwarding_return_type  ;
             typedef                 value_type const &                      return_type             ;
-            enum
-            {
-                forward_returns_reference   = TRange::forward_returns_reference ,
-                returns_reference           = 1                                 ,
-            };
 
+            static constexpr bool forward_returns_reference = TRange::returns_reference;
+            static constexpr bool returns_reference = true;
+            
             range_type              range           ;
             predicate_type          predicate       ;
             bool                    sort_ascending  ;
@@ -1220,10 +1186,7 @@ namespace cpplinq
 
             typedef                 std::vector<value_type>                     stack_type          ;
 
-            enum
-            {
-                returns_reference   = 1     ,
-            };
+            static constexpr bool returns_reference = true;
 
 
             range_type                  range               ;
@@ -1337,10 +1300,8 @@ namespace cpplinq
 
             typedef                 typename TRange::value_type     value_type      ;
             typedef                 typename TRange::return_type    return_type     ;
-            enum
-            {
-                returns_reference   = TRange::returns_reference   ,
-            };
+            
+            static constexpr bool returns_reference = true;
 
             range_type              range       ;
             predicate_type          predicate   ;
@@ -1434,10 +1395,8 @@ namespace cpplinq
 
             typedef                 typename TRange::value_type     value_type      ;
             typedef                 typename TRange::return_type    return_type     ;
-            enum
-            {
-                returns_reference   = TRange::returns_reference   ,
-            };
+            
+            static constexpr bool returns_reference = true;
 
             range_type              range       ;
             size_type               count       ;
@@ -1531,10 +1490,8 @@ namespace cpplinq
 
             typedef                 typename TRange::value_type             value_type      ;
             typedef                 typename TRange::return_type            return_type     ;
-            enum
-            {
-                returns_reference   = TRange::returns_reference   ,
-            };
+            
+            static constexpr bool returns_reference = TRange::returns_reference;
 
             range_type              range       ;
             predicate_type          predicate   ;
@@ -1640,10 +1597,8 @@ namespace cpplinq
 
             typedef                 typename TRange::value_type     value_type      ;
             typedef                 typename TRange::return_type    return_type     ;
-            enum
-            {
-                returns_reference   = TRange::returns_reference   ,
-            };
+            
+            static constexpr bool returns_reference   = TRange::returns_reference;
 
             range_type              range       ;
             size_type               count       ;
@@ -1746,11 +1701,9 @@ namespace cpplinq
 
             typedef                 typename TRange::value_type     value_type      ;
             typedef                 typename TRange::return_type    return_type     ;
-            enum
-            {
-                returns_reference   = TRange::returns_reference   ,
-            };
-
+            
+            static constexpr bool returns_reference = TRange::returns_reference;
+            
             range_type              range       ;
             predicate_type          predicate   ;
             bool                    skipping    ;
@@ -1849,10 +1802,8 @@ namespace cpplinq
             typedef        std::reference_wrapper<
                                 typename TRange::value_type const>  value_type  ;
             typedef                 value_type                      return_type ;
-            enum
-            {
-                returns_reference   = 0   ,
-            };
+            
+            static constexpr bool returns_reference = false;
 
             typedef                 ref_range<TRange>               this_type   ;
             typedef                 TRange                          range_type  ;
@@ -1928,17 +1879,12 @@ namespace cpplinq
         template<typename TRange, typename TPredicate>
         struct select_range : base_range
         {
-            static typename TRange::value_type get_source ();
-            static          TPredicate get_predicate ();
-
-
-            typedef        decltype (get_predicate ()(get_source ()))   raw_value_type  ;
+            typedef        decltype ( std::declval<TPredicate>()( std::declval<typename TRange::value_type>() ) )
+                                                                        raw_value_type  ;
             typedef        typename cleanup_type<raw_value_type>::type  value_type      ;
             typedef                 value_type const &                  return_type     ;
-            enum
-            {
-                returns_reference   = 1   ,
-            };
+            
+            static constexpr bool returns_reference = true;
 
             typedef                 select_range<TRange, TPredicate>    this_type       ;
             typedef                 TRange                              range_type      ;
@@ -2035,17 +1981,13 @@ namespace cpplinq
         template<typename TRange, typename TPredicate>
         struct select_many_range_helper
         {
-            static typename TRange::value_type get_source ();
-            static          TPredicate get_predicate ();
-
-            typedef        decltype (get_predicate ()(get_source ()))           raw_inner_range_type    ;
+            typedef        decltype ( std::declval<TPredicate>()(std::declval<typename TRange::value_type>()) )           
+                                                                                raw_inner_range_type    ;
             typedef        typename cleanup_type<raw_inner_range_type>::type    inner_range_type        ;
 
-            static         inner_range_type get_inner_range ();
-
-            typedef        decltype (get_inner_range ().front ())               raw_value_type          ;
+            typedef        decltype ( std::declval<inner_range_type>().front ())
+                                                                                raw_value_type          ;
             typedef        typename cleanup_type<raw_value_type>::type          value_type              ;
-
         };
 
         template<typename TRange, typename TPredicate>
@@ -2056,10 +1998,8 @@ namespace cpplinq
             typedef        typename helper_type::inner_range_type   inner_range_type    ;
             typedef        typename helper_type::value_type         value_type          ;
             typedef                 value_type                      return_type         ;
-            enum
-            {
-                returns_reference   = 0   ,
-            };
+            
+            static constexpr bool returns_reference = false;
 
             typedef                 select_many_range<TRange, TPredicate>       this_type               ;
             typedef                 TRange                                      range_type              ;
@@ -2184,10 +2124,8 @@ namespace cpplinq
                                                                                 raw_value_type  ;
             typedef         typename cleanup_type<raw_value_type>::type         value_type      ;
             typedef                 value_type                                  return_type     ;
-            enum
-            {
-                returns_reference   = 0   ,
-            };
+            
+            static constexpr bool returns_reference = false;
 
             typedef                 join_range<
                     TRange
@@ -2392,10 +2330,8 @@ namespace cpplinq
 
             typedef    typename cleanup_type<typename TRange::value_type>::type value_type          ;
             typedef             value_type const &                              return_type         ;
-            enum
-            {
-                returns_reference   = 1 ,
-            };
+            
+            static constexpr bool returns_reference = true;
 
             typedef             std::set<value_type>               set_type                         ;
             typedef    typename set_type::const_iterator           set_iterator_type                ;
@@ -2486,10 +2422,8 @@ namespace cpplinq
 
             typedef    typename cleanup_type<typename TRange::value_type>::type value_type          ;
             typedef             value_type const &                              return_type         ;
-            enum
-            {
-                returns_reference   = 1 ,
-            };
+            
+            static constexpr bool returns_reference = true;
 
             typedef             std::set<value_type>               set_type                         ;
             typedef    typename set_type::const_iterator           set_iterator_type                ;
@@ -2603,10 +2537,8 @@ namespace cpplinq
 
             typedef    typename cleanup_type<typename TRange::value_type>::type value_type          ;
             typedef             value_type const &                              return_type         ;
-            enum
-            {
-                returns_reference   = 1 ,
-            };
+            
+            static constexpr bool returns_reference = true;
 
             typedef             std::set<value_type>               set_type                         ;
             typedef    typename set_type::const_iterator           set_iterator_type                ;
@@ -2744,10 +2676,8 @@ namespace cpplinq
 
             typedef    typename cleanup_type<typename TRange::value_type>::type value_type          ;
             typedef             value_type const &                              return_type         ;
-            enum
-            {
-                returns_reference   = 1 ,
-            };
+            
+            static constexpr bool returns_reference = true;
 
             typedef             std::set<value_type>               set_type                         ;
             typedef    typename set_type::const_iterator           set_iterator_type                ;
@@ -2865,10 +2795,7 @@ namespace cpplinq
             typedef typename    cleanup_type<typename TOtherRange::value_type>::type    other_value_type    ;
             typedef             value_type                                              return_type         ;
 
-            enum
-            {
-                returns_reference   = 0         ,
-            };
+            static constexpr bool returns_reference = false;
 
             enum state
             {
@@ -3019,10 +2946,8 @@ namespace cpplinq
                 typedef                 std::forward_iterator_tag   iterator_category   ;
                 typedef     typename    TRange::value_type          value_type          ;
                 typedef     typename    TRange::return_type         return_type         ;
-                enum
-                {
-                    returns_reference   = TRange::returns_reference   ,
-                };
+                
+                static constexpr bool returns_reference = TRange::returns_reference;
 
                 typedef                 std::ptrdiff_t              difference_type     ;
                 typedef                 value_type*                 pointer             ;
@@ -3112,10 +3037,8 @@ namespace cpplinq
                 typedef                 TRange              range_type                  ;
                 typedef                 typename TRange::value_type     value_type      ;
                 typedef                 typename TRange::return_type    return_type     ;
-                enum
-                {
-                    returns_reference   = TRange::returns_reference   ,
-                };
+                
+                static constexpr bool returns_reference = TRange::returns_reference;
 
                 range_type              range   ;
 
@@ -3246,8 +3169,6 @@ namespace cpplinq
         template<typename TKeyPredicate>
         struct to_map_builder : base_builder
         {
-            static TKeyPredicate get_key_predicate ();
-
             typedef                     to_map_builder<TKeyPredicate>   this_type           ;
             typedef                     TKeyPredicate                   key_predicate_type  ;
 
@@ -3420,10 +3341,7 @@ namespace cpplinq
             {
                 typedef         lookup_range                this_type       ;
 
-                enum
-                {
-                    returns_reference = 1 ,
-                };
+                static constexpr bool returns_reference = true;
 
                 typedef         TValue                      value_type      ;
                 typedef         value_type const &          return_type     ;
@@ -3567,8 +3485,6 @@ namespace cpplinq
         template<typename TKeyPredicate>
         struct to_lookup_builder : base_builder
         {
-            static TKeyPredicate get_key_predicate ();
-
             typedef                     to_lookup_builder<TKeyPredicate>    this_type           ;
             typedef                     TKeyPredicate                       key_predicate_type  ;
 
@@ -4772,10 +4688,7 @@ namespace cpplinq
             typedef                 std::pair<element_type,element_type>        value_type          ;
             typedef                 value_type                                  return_type         ;
 
-            enum
-            {
-                returns_reference   = 0     ,
-            };
+            static constexpr bool returns_reference = false;
 
 
             range_type                   range               ;
@@ -4881,10 +4794,8 @@ namespace cpplinq
             typedef    typename cleanup_type<typename TOtherRange::value_type>::type    right_element_type ;
             typedef             std::pair<left_element_type,right_element_type>         value_type         ;
             typedef             value_type                                              return_type        ;
-            enum
-            {
-                returns_reference   = 0 ,
-            };
+            
+            static constexpr bool returns_reference = false;
 
             range_type                  range               ;
             other_range_type            other_range         ;
@@ -4962,22 +4873,17 @@ namespace cpplinq
         template<typename TPredicate>
         struct generate_range : base_range
         {
-            static         TPredicate get_predicate ();
-
-            typedef        decltype (get_predicate ()())                    raw_opt_value_type  ;
+            typedef        decltype (std::declval<TPredicate>()())          raw_opt_value_type  ;
             typedef        typename cleanup_type<raw_opt_value_type>::type  opt_value_type      ;
 
-            typedef        decltype (*(get_predicate ()()))                 raw_value_type      ;
+            typedef        decltype (*(std::declval<TPredicate>()()))       raw_value_type      ;
             typedef        typename cleanup_type<raw_value_type>::type      value_type          ;
 
             typedef                 generate_range<TPredicate>      this_type           ;
             typedef                 TPredicate                      predicate_type      ;
             typedef                 value_type const &              return_type         ;
 
-            enum
-            {
-                returns_reference = 1,
-            };
+            static constexpr bool returns_reference = true;
 
             TPredicate              predicate       ;
             opt_value_type          current_value   ;
@@ -5050,18 +4956,17 @@ namespace cpplinq
             );
     }
 
-    template<typename TValueArray>
-    CPPLINQ_INLINEMETHOD detail::from_range<typename detail::get_array_properties<TValueArray>::iterator_type> from_array (
-            TValueArray & a
+    template<typename TValue, std::size_t Size>
+    CPPLINQ_INLINEMETHOD detail::from_range<const TValue*> from_array (
+            const TValue (&a)[Size]
         ) CPPLINQ_NOEXCEPT
     {
-        typedef detail::get_array_properties<TValueArray>   array_properties;
-        typedef typename array_properties::iterator_type    iterator_type   ;
+        typedef const TValue*                               iterator_type   ;
 
         iterator_type begin = a;
-        iterator_type end   = begin + array_properties::size;
+        iterator_type end   = begin + Size;
 
-        return detail::from_range<typename array_properties::iterator_type> (
+        return detail::from_range<iterator_type> (
                 std::move (begin)
             ,   std::move (end)
             );
